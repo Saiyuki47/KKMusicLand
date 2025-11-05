@@ -1,13 +1,9 @@
 import processing.sound.*;
 
-/* Main.pde
-   Entry point for the sketch. Sets up the menu and game managers
-   and forwards input/events between them.
-*/
 
-GameManager game; // handles game state, notes and music logic
-MenuManager menu; // handles main menu UI (start/exit)
-
+GameManager game;
+MenuManager menu; 
+Background bg;
 void setup() {
   // Sketch window and basic text sizing
   size(800, 600);
@@ -16,11 +12,13 @@ void setup() {
   // Create menu and game manager instances
   menu = new MenuManager();
   game = new GameManager();
+  bg = new Background();
 }
 
 void draw() {
   // Clear frame and draw either the menu or the active game
-  background(255);
+  bg.updateSkyColor();
+  bg.display();
   if (menu.isInMenu) {
     menu.display();
   } else {

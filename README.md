@@ -56,10 +56,3 @@ How to run
 2. Install the Sound library (Sketch → Import Library → Add Library → Sound).
 3. Ensure `data/gamemusic/Grand-Opening-PM-Music.wav` exists.
 4. Run the sketch. Use Start (or Enter) to begin; click notes to score.
-
-If you want, I can:
-- initialize exactly 10 notes at game start, and/or
-- add a quick API example (OpenWeatherMap) and a second library to meet requirement 8/9.
-
-Tell me which addition you prefer and I will implement it and update the README.
-

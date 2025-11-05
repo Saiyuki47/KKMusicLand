@@ -11,7 +11,7 @@ class MusicManager {
   
   // Current volume (0..1). Kept here for future usage; the menu slider
   // was removed but the setter remains useful if you reintroduce controls.
-  float volume = 1.0;
+  float volume = 0.1;
 
   // Default constructor: use current volume
   MusicManager() {
