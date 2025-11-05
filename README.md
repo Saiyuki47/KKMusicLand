@@ -1,89 +1,65 @@
-# 🎸 K.K. Music Game
+# KK Music Land — Module Programming (Minor CDT)
 
-Ein kleines Rhythmus-Spiel inspiriert von *Animal Crossing*, erstellt in **Processing (Java Mode)**.  
-Hilf K.K. dabei, die Noten im richtigen Moment zu treffen, während sich die Welt um dich herum verändert! 🌞🌙🎵
+Student Name: David
 
----
+Product title: KK Music Land
 
-## 🕹️ Gameplay
-
-- **Ziel:** Klicke auf die herunterfallenden Noten, bevor sie den Boden erreichen.  
-- **Jede getroffene Note** bringt Punkte.  
-- **Verpasst du eine Note**, ist das Spiel vorbei.  
-- Die **Tageszeit** wechselt automatisch zwischen Tag und Nacht.  
-- Die **Welt verändert sich** dynamisch mit Himmel, Sonne, Mond, Bäumen und Blumen – alles direkt in Processing gezeichnet.
+Short description:
+Small Processing sketch: colorful "notes" appear to the beat of a local audio file. The player clicks notes before they reach the bottom. The sketch includes a main menu (Start/Exit) and a Retry button on Game Over.
 
 ---
 
-## 🧠 Features
+Checklist mapping (how each requirement is satisfied)
 
-✅ Handgezeichneter Hintergrund (Sonne, Mond, Wolken, Blumen, Bäume)  
-✅ Dynamischer Tag-Nacht-Wechsel  
-✅ Klickbare Noten mit zufälligen Farben  
-✅ Punktesystem  
-✅ Game-Over-Bildschirm  
-✅ Komplett **ohne externe Bilder**  
+1) Graphics consistent and own design
 
----
+   - Implemented: Yes — consistent simple vector style (notes and rounded buttons).
+   - Files: `Note.pde`, `Button.pde`, `MenuManager.pde`, `Main.pde`.
 
-## ⚙️ Installation & Start
+2) Automatic movement in the virtual world
 
-1. Lade **Processing** herunter und öffne es:  
-   👉 [https://processing.org/download/](https://processing.org/download/)
+   - Implemented: Yes — notes fall automatically (`Note.update()`), driven by `GameManager.update()`.
 
-2. Erstelle einen neuen Sketch-Ordner, z. B.:  
-   ```
-   KkMusicGame/
-   ```
+3) Own code (student can explain)
 
-3. Erstelle **zwei Tabs**:
-   - `KkMusicGame.pde` → Hauptcode  
-   - `Note.pde` → Noten-Klasse  
+   - Implemented: Yes — code is split into multiple `.pde` files (`GameManager`, `MusicManager`, `MenuManager`, `Note`, `Button`) and includes comments.
 
-4. Füge den Code aus der Anleitung hier ein.  
-5. Stelle sicher, dass oben rechts in der IDE **„Java“** ausgewählt ist.  
-6. Klicke auf ▶️ **Run**.
+4) Creatures and player are objects of a class
 
----
+   - Implemented: Creatures are `Note` objects. The player is represented by interaction (mouse clicks). If a separate `Player` class is required, it can be added easily.
 
-## 🪄 Steuerung
+5) Virtual world is interactive
 
-| Aktion             | Beschreibung                    |
-|--------------------|----------------------------------|
-| 🖱️ Mausklick        | Triff eine Note                 |
-| ⏰ Automatisch      | Tag/Nacht wechselt alle 10 Sek. |
-| ❌ Verpass Note     | Spiel endet                     |
+   - Implemented: Yes — clicking notes (`Note.isHit()`), buttons, and keyboard input (Enter to start, R to restart).
 
----
+6) At least two inputs used
 
-## 🧩 Fehlerbehebung
+   - Implemented: Yes — Mouse and Keyboard. Sound (SoundFile + FFT) is also used to drive note spawning.
 
-| Problem | Lösung |
-|----------|---------|
-| `color` wird nicht erkannt | Stelle sicher, dass du im **Java Mode** bist. Falls nötig, ersetze `color` durch `int`. |
-| „The class Note does not exist“ | Überprüfe, dass dein zweiter Tab **Note.pde** heißt und im selben Ordner ist. |
-| „Cannot find a class or type named intr“ | Wahrscheinlich Tippfehler. Achte auf korrekte Schreibweise von `int`. |
+7) Use of an Array/List to store multiple objects
+
+   - Implemented: Yes — `ArrayList<Note> notes` in `GameManager.pde` stores active notes; gameplay produces more than 10 notes during play.
+
+8) Use of an API so internet data influences the world
+
+   - Not implemented: No internet/API calls are present. I can add a simple API integration (e.g., OpenWeatherMap for background color or tempo) on request.
+
+9) Apart from the API library, another library is used
+
+   - Implemented partially: The sketch uses Processing's Sound library (`processing.sound.*`). If an external API is added, a second library (e.g., ControlP5 for GUI or an HTTP client) can fulfill this requirement.
 
 ---
 
-## 🌈 Erweiterungsideen
+How to run
 
-- 🎵 **Soundeffekte** mit der `Minim`-Library  
-- 🌦️ **Echtzeit-Wetter & Tageszeit** per `hour()` und `minute()`  
-- 🌳 **Animierte Natur** (bewegte Wolken, Vögel)  
-- 🎶 **Mehrere Level** mit unterschiedlicher Notengeschwindigkeit  
-- 💥 **Effekte** beim Treffen/Verpassen einer Note  
+1. Open the `KKMusicLand` folder in Processing.
+2. Install the Sound library (Sketch → Import Library → Add Library → Sound).
+3. Ensure `data/gamemusic/Grand-Opening-PM-Music.wav` exists.
+4. Run the sketch. Use Start (or Enter) to begin; click notes to score.
 
----
+If you want, I can:
+- initialize exactly 10 notes at game start, and/or
+- add a quick API example (OpenWeatherMap) and a second library to meet requirement 8/9.
 
-## 👨‍💻 Autor
+Tell me which addition you prefer and I will implement it and update the README.
 
-Projekt erstellt von **David**  
-Mit Unterstützung von ChatGPT (Prompt Engineering & Processing Code).  
-
----
-
-## 📜 Lizenz
-
-Dieses Projekt ist frei zu Lernzwecken verwendbar.  
-Bitte nenne den Urheber, wenn du es weiterverwendest oder veröffentlichst.
