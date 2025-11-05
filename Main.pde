@@ -1,30 +1,64 @@
-PFont font;
+import processing.sound.*;
+
 ArrayList<Note> notes = new ArrayList<Note>();
 int score = 0;
 boolean gameOver = false;
-boolean isDay = true;
+SoundFile music;
+FFT fft;
+float[] spectrum;
+// Button-Eigenschaften
+float buttonX, buttonY, buttonWidth = 200, buttonHeight = 50;
+float beatThreshold = 0.007;
+int lastBeatTime = 0;
+int beatInterval = 800;
+boolean debug = true;
+float visualizationScale = 5000;
 
 void setup() {
   size(800, 600);
-  font = createFont("Arial", 24);
-  textFont(font);
+  textSize(24);
   
-  for (int i = 0; i < 5; i++) {
-    notes.add(new Note(random(width), random(-400, -50)));
-  }
+  // Button Position berechnen
+  buttonX = width/2 - buttonWidth/2;
+  buttonY = height/2 + 50;
+  
+  // Spiel initialisieren
+  initGame();
 }
 
 void draw() {
-  drawBackground();
+  background(255); // Hintergrund weiß machen
   
-  // Wechsel zwischen Tag und Nacht alle 10 Sekunden
-  if (frameCount % (60 * 10) == 0) {
-    isDay = !isDay;
+  // Musikanalyse durchführen
+  fft.analyze(spectrum);
+  
+  // Beat erkennen und Note hinzufügen
+  float sum = 0;
+  for (int i = 0; i < spectrum.length; i++) {
+    sum += spectrum[i];
   }
-
-  // K.K.-Figur (vereinfacht)
-  drawKK(100, height - 180);
-
+  float average = sum / spectrum.length;
+  
+  if (debug) {
+    // Debug-Informationen anzeigen
+    fill(0);
+    text("Audio Level: " + nf(average, 0, 6), 20, 60);
+    text("Threshold: " + nf(beatThreshold, 0, 6), 20, 90);
+    // Visualisierung des Audio-Levels
+    fill(255, 0, 0);
+    rect(20, 100, average * visualizationScale, 10);
+    fill(0, 255, 0);
+    rect(20, 120, beatThreshold * visualizationScale, 10);
+  }
+  
+  if (average > beatThreshold && millis() - lastBeatTime > beatInterval) {
+    notes.add(new Note(random(width), -50));
+    lastBeatTime = millis();
+    if (debug) {
+      println("Beat detected! Level: " + average);
+    }
+  }
+  
   for (int i = notes.size() - 1; i >= 0; i--) {
     Note n = notes.get(i);
     n.update();
@@ -40,124 +74,105 @@ void draw() {
   text("Score: " + score, 20, 30);
 
   if (gameOver) {
+    // Game Over Text
     textAlign(CENTER);
     textSize(40);
     fill(255, 0, 0);
     text("Game Over!", width/2, height/2);
+    
+    // Retry Button
+    drawRetryButton();
+    
+    // Spiel und Musik stoppen
     noLoop();
-  }
-}
-
-void mousePressed() {
-  for (int i = notes.size() - 1; i >= 0; i--) {
-    Note n = notes.get(i);
-    if (n.isHit(mouseX, mouseY)) {
-      score++;
-      notes.remove(i);
-      notes.add(new Note(random(width), random(-400, -50)));
+    if (music != null && music.isPlaying()) {
+      music.stop();
     }
   }
 }
 
-void drawBackground() {
-  if (isDay) {
-    background(135, 206, 250); // Himmel blau
-    drawSun();
+void mousePressed() {
+  if (gameOver) {
+    // Prüfen ob der Retry Button geklickt wurde
+    if (mouseX >= buttonX && mouseX <= buttonX + buttonWidth &&
+        mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
+      restartGame();
+    }
   } else {
-    background(20, 24, 60); // Nachthimmel
-    drawStars();
-    drawMoon();
+    // Normales Spielverhalten
+    for (int i = notes.size() - 1; i >= 0; i--) {
+      Note n = notes.get(i);
+      if (n.isHit(mouseX, mouseY)) {
+        score++;
+        notes.remove(i);
+        notes.add(new Note(random(width), -50));
+      }
+    }
   }
+}
+
+// Zeichnet den Retry Button
+void drawRetryButton() {
+  // Button Hintergrund
+  fill(0, 255, 0);
+  rect(buttonX, buttonY, buttonWidth, buttonHeight, 10);
   
-  drawClouds();
-  drawGrass();
-  drawFlowers();
-  drawTrees();
-}
-
-void drawSun() {
-  fill(255, 204, 0);
-  noStroke();
-  ellipse(700, 100, 100, 100);
-}
-
-void drawMoon() {
-  fill(240, 240, 200);
-  noStroke();
-  ellipse(700, 100, 80, 80);
-}
-
-void drawStars() {
-  fill(255, 255, 200);
-  noStroke();
-  for (int i = 0; i < 50; i++) {
-    ellipse(random(width), random(200), random(1, 3), random(1, 3));
-  }
-}
-
-
-void drawClouds() {
+  // Button Text
   fill(255);
-  noStroke();
-  ellipse(200, 100, 120, 60);
-  ellipse(250, 100, 100, 50);
-  ellipse(150, 100, 90, 50);
+  textSize(24);
+  textAlign(CENTER, CENTER);
+  text("Retry", buttonX + buttonWidth/2, buttonY + buttonHeight/2);
 }
 
-void drawGrass() {
-  fill(60, 180, 75);
-  rect(0, height - 150, width, 150);
-}
-
-void drawFlowers() {
-  for (int i = 0; i < 6; i++) {
-    float x = 150 + i * 100;
-    float y = height - 50;
-    drawFlower(x, y);
+// Initialisiert das Spiel
+void initGame() {
+  try {
+    // Neue Musik-Instanz erstellen
+    music = new SoundFile(this, "Grand-Opening-PM-Music.wav");
+    
+    // Neue FFT-Instanz erstellen
+    fft = new FFT(this, 512);
+    spectrum = new float[512];
+    
+    // FFT mit Musik verbinden und Musik starten
+    fft.input(music);
+    music.play();
+  } catch (Exception e) {
+    println("Fehler beim Initialisieren der Musik: " + e.toString());
   }
 }
 
-void drawFlower(float x, float y) {
-  stroke(0);
-  strokeWeight(2);
-  line(x, y, x, y - 40);
-  fill(random(200, 255), random(100, 255), random(100, 255));
-  noStroke();
-  ellipse(x - 10, y - 45, 15, 15);
-  ellipse(x + 10, y - 45, 15, 15);
-  ellipse(x, y - 55, 15, 15);
-  fill(255, 255, 0);
-  ellipse(x, y - 45, 10, 10);
+// Stoppt die aktuelle Musik
+void stopCurrentMusic() {
+  try {
+    if (music != null && music.isPlaying()) {
+      music.stop();
+    }
+    // FFT und Musik-Referenzen löschen
+    fft = null;
+    music = null;
+  } catch (Exception e) {
+    println("Fehler beim Stoppen der Musik: " + e.toString());
+  }
 }
 
-void drawTrees() {
-  drawTree(600, height - 150);
-  drawTree(700, height - 150);
-}
-
-void drawTree(float x, float y) {
-  fill(101, 67, 33);
-  rect(x, y - 80, 20, 80);
-  fill(34, 139, 34);
-  ellipse(x + 10, y - 100, 80, 80);
-}
-
-// 🐶 K.K. einfach gezeichnet
-void drawKK(float x, float y) {
-  // Körper
-  fill(255);
-  ellipse(x, y, 60, 80);
+// Startet das Spiel neu
+void restartGame() {
+  // Alte Musik stoppen
+  stopCurrentMusic();
   
-  // Kopf
-  ellipse(x, y - 60, 70, 70);
+  // Spiel-Variablen zurücksetzen
+  notes.clear();
+  score = 0;
+  gameOver = false;
+  lastBeatTime = 0;
   
-  // Augen
-  fill(0);
-  ellipse(x - 15, y - 65, 10, 15);
-  ellipse(x + 15, y - 65, 10, 15);
+  // Warten, um sicherzustellen, dass die alte Musik gestoppt ist
+  delay(100);
   
-  // Gitarre (einfach)
-  fill(150, 100, 50);
-  ellipse(x + 40, y - 20, 60, 40);
-  rect(x + 60, y - 25, 40, 10);
+  // Neues Spiel initialisieren
+  initGame();
+  
+  // Animation wieder starten
+  loop();
 }
