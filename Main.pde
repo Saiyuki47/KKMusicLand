@@ -30,6 +30,10 @@ void draw() {
 // Mouse pressed events are forwarded to either the menu
 // (when the menu is visible) or the game while playing.
 void mousePressed() {
+  // Erst Debug-Wetter-UI prüfen
+  if (bg != null && bg.mousePressed()) {
+    return;
+  }
   if (menu.isInMenu) {
     boolean started = menu.mousePressed();
     if (started) {
