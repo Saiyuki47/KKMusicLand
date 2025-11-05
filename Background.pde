@@ -5,7 +5,7 @@ class Background {
   WeatherManager weather; // Reale Wetterdaten (Open-Meteo)
   
   // Debug-UI: Wetter manuell umstellen
-  boolean showWeatherDebug = true;
+  boolean showWeatherDebug = false;
   boolean manualWeather = false; // true = manuell gesetztes Wetter aktiv
   Button btnLive, btnSunny, btnCloudy, btnRain, btnSnow, btnFog, btnStorm;
   
@@ -192,7 +192,7 @@ class Background {
 
     // Position relativ zum Horizont, rechts unten
     float baseX = width * 0.18;
-    float baseY = horizonHeight - 10;
+    float baseY = horizonHeight + 30;
     translate(baseX, baseY);
 
     // Sanftes Wippen zur Musik/Bewegung
