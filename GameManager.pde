@@ -87,7 +87,12 @@ class GameManager {
     missFlashTimer = 30;
     screenShake = 8 + (consecutiveMisses * 2); // Stärkerer Shake bei mehreren Misses
     consecutiveMisses++;
-    
+
+    if(consecutiveMisses >= 5){
+      gameOver();
+      return;
+    }
+
     // Entferne eine Blume wenn vorhanden
     if (flowers.size() > 0) {
       flowers.remove(flowers.size() - 1);

@@ -149,6 +149,11 @@ class Background {
     skyColor = (h >= 6 && h < 17) ? color(135, 206, 235) :
                (h >= 17 && h < 20) ? color(255, 140, 0) :
                color(25, 25, 112);
+    
+    // Aktualisiere Wetter-Daten von API (nur wenn nicht manuell gesetzt)
+    if (!manualWeather && weather != null && frameCount % 3600 == 0) {
+      weather.updateWeather();
+    }
   }
   
   void drawMusicianDog() {

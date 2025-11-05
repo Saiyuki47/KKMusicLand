@@ -44,6 +44,7 @@ class WeatherAPI {
       "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f&current_weather=true&hourly=temperature_2m,precipitation_probability,cloudcover",
       latitude, longitude
     );
+    println("Rufe Weather API auf: " + url);
     try {
       JSONObject data = null;
       try {
@@ -62,6 +63,7 @@ class WeatherAPI {
       if (data != null) {
         cached = data;
         lastUpdate = millis();
+        println("Weather API Daten erfolgreich geladen!");
       } else {
         println("WeatherAPI error: No valid JSON object returned from API.");
         try {

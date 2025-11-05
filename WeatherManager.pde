@@ -12,11 +12,14 @@ class WeatherManager {
   }
   void updateWeather() {
     try {
+      println("=== Aktualisiere Wetter von API ===");
       int code = api.getWeatherCode();
       temperature = api.getTemperature();
       cloudCover = api.getCloudCover();
       condition = mapWeatherCode(code);
-      println("Weather: " + condition + ", " + nf(temperature,0,1) + "C, cloud=" + int(cloudCover*100) + "%");
+      println("Weather Code: " + code);
+      println("Weather: " + condition + ", " + nf(temperature,0,1) + "°C, cloud=" + int(cloudCover*100) + "%");
+      println("===================================");
     } catch (Exception e) {
       println("WeatherManager update error: " + e.getMessage());
     }
