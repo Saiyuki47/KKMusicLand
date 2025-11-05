@@ -1,68 +1,72 @@
+
 class GameManager {
-  ArrayList<Note> notes;
-  ArrayList<Bird> birds;
-  ArrayList<Flower> flowers;
-  boolean gameOver;
-
-  Button retryButton;
-  Button menuButton;
-
+  ArrayList<Note> notes = new ArrayList<Note>();
+  ArrayList<Bird> birds = new ArrayList<Bird>();
+  ArrayList<Flower> flowers = new ArrayList<Flower>();
+  boolean gameOver = false;
+  Button retryBtn = new Button(width/2 - 210, height/2 + 50, 200, 50, "Retry");
+  Button menuBtn = new Button(width/2 + 10, height/2 + 50, 200, 50, "Main Menu");
   MusicManager musicManager;
-  Player player;
+  Player player = new Player();
+  int lastBirdScore = 0;
+  int lastFlowerScore = 0;
   
-  int lastBirdScore;
-  int lastFlowerScore;
+  // Miss-Effekte
+  int missFlashTimer = 0;
+  int consecutiveMisses = 0;
+  float screenShake = 0;
 
-  GameManager() {
-    notes = new ArrayList<Note>();
-    birds = new ArrayList<Bird>();
-    flowers = new ArrayList<Flower>();
-    gameOver = false;
-    retryButton = new Button(width/2 - 210, height/2 + 50, 200, 50, "Retry");
-    menuButton = new Button(width/2 + 10, height/2 + 50, 200, 50, "Main Menu");
-    player = new Player();
-    lastBirdScore = 0;
-    lastFlowerScore = 0;
-  }
+  GameManager() {}
 
   void update() {
     if (gameOver) return;
-
-    // Beat -> neue Note
-    if (musicManager != null && musicManager.detectBeat()) {
-      spawnNoteAt(random(width), -50);
-    }
-
-    // Noten aktualisieren und auf Game Over prüfen
+    if (musicManager != null) musicManager.setVolume(settingsManager.volume);
+    if (musicManager != null && musicManager.detectBeat()) spawnNoteAt(random(width), -50);
     updateNotes();
+    updateVisuals();
     
-    // Visuelle Effekte basierend auf Score
-    updateVisualEffects();
+    // Reduziere Effekt-Timer
+    if (missFlashTimer > 0) missFlashTimer--;
+    if (screenShake > 0) screenShake *= 0.85;
   }
 
   void display() {
-    // Blumen zuerst (im Hintergrund)
-    for (Flower flower : flowers) flower.display();
+    pushMatrix();
     
-    // Vögel
-    for (Bird bird : birds) bird.display();
+    // Screen Shake bei Miss
+    if (screenShake > 0) {
+      translate(random(-screenShake, screenShake), random(-screenShake, screenShake));
+    }
     
-    for (Note note : notes) note.display();
+    //display every flower, bird, note
+    for (Flower f : flowers) f.display();
+    for (Bird b : birds) b.display();
+    for (Note n : notes) n.display();
     player.display();
+    
+    popMatrix();
+    
     drawHUD();
+    
+    // Roter Flash bei Miss
+    if (missFlashTimer > 0) {
+      noStroke();
+      fill(255, 0, 0, map(missFlashTimer, 0, 30, 0, 100));
+      rect(0, 0, width, height);
+    }
+    
     if (gameOver) drawGameOverUI();
   }
 
   void mousePressed() {
     if (gameOver) {
-      if (retryButton.isClicked(mouseX, mouseY)) restart();
-      else if (menuButton.isClicked(mouseX, mouseY)) returnToMenu();
+      if (retryBtn.isClicked(mouseX, mouseY)) restart();
+      else if (menuBtn.isClicked(mouseX, mouseY)) returnToMenu();
       return;
     }
     checkNoteHits();
   }
 
-  // --- Helpers ---
   void spawnNoteAt(float x, float y) {
     notes.add(new Note(x, y));
   }
@@ -72,13 +76,39 @@ class GameManager {
       Note n = notes.get(i);
       n.update();
       if (n.y > height) {
-        handleGameOver();
-        break;
+        noteMissed();
+        notes.remove(i);
       }
     }
   }
+  
+  void noteMissed() {
+    // Visuelle Effekte
+    missFlashTimer = 30;
+    screenShake = 8 + (consecutiveMisses * 2); // Stärkerer Shake bei mehreren Misses
+    consecutiveMisses++;
+    
+    // Entferne eine Blume wenn vorhanden
+    if (flowers.size() > 0) {
+      flowers.remove(flowers.size() - 1);
+    }
+    
+    // Entferne auch Vögel bei vielen Misses
+    if (consecutiveMisses > 2 && birds.size() > 0) {
+      birds.remove(birds.size() - 1);
+    }
+    
+    // Reduziere Score stärker bei Combo-Misses
+    int scorePenalty = 1 + (consecutiveMisses / 3);
+    player.score = max(0, player.score - scorePenalty);
+    
+    // Game Over wenn alle Blumen weg sind
+    if (flowers.size() == 0) {
+      gameOver();
+    }
+  }
 
-  void handleGameOver() {
+  void gameOver() {
     gameOver = true;
     if (musicManager != null) musicManager.stopMusic();
     noLoop();
@@ -95,8 +125,8 @@ class GameManager {
     textSize(40);
     fill(255, 0, 0);
     text("Game Over!", width/2, height/2);
-    retryButton.display();
-    menuButton.display();
+    retryBtn.display();
+    menuBtn.display();
   }
 
   void checkNoteHits() {
@@ -105,51 +135,30 @@ class GameManager {
       if (n.isHit(mouseX, mouseY)) {
         player.score++;
         notes.remove(i);
-        spawnNoteAt(random(width), -50);
-        checkForNewEffects();
+        consecutiveMisses = 0; // Reset Miss-Combo
+        checkEffects();
       }
     }
   }
-  
-  void updateVisualEffects() {
-    // Vögel aktualisieren
+
+  void updateVisuals() {
     for (int i = birds.size() - 1; i >= 0; i--) {
       Bird b = birds.get(i);
       b.update();
-      if (b.isOffScreen()) {
-        birds.remove(i);
-      }
+      if (b.isOffScreen()) birds.remove(i);
     }
-    
-    // Blumen aktualisieren
-    for (Flower f : flowers) {
-      f.update();
-    }
+    for (Flower f : flowers) f.update();
   }
-  
-  void checkForNewEffects() {
-    // Alle 5 Punkte: Vogel fliegt vorbei
+
+  void checkEffects() {
     if (player.score > 0 && player.score % 5 == 0 && player.score != lastBirdScore) {
-      spawnBird();
+      birds.add(new Bird(random(50, height/2)));
       lastBirdScore = player.score;
     }
-    
-    // Alle 3 Punkte: Blume wächst
     if (player.score > 0 && player.score % 3 == 0 && player.score != lastFlowerScore) {
-      spawnFlower();
+      flowers.add(new Flower(random(50, width - 50), height - 20));
       lastFlowerScore = player.score;
     }
-  }
-  
-  void spawnBird() {
-    float yPos = random(50, height/2);
-    birds.add(new Bird(yPos));
-  }
-  
-  void spawnFlower() {
-    // Blumen am unteren Rand
-    float xPos = random(50, width - 50);
-    flowers.add(new Flower(xPos, height - 20));
   }
 
   void restart() {
@@ -160,6 +169,9 @@ class GameManager {
     gameOver = false;
     lastBirdScore = 0;
     lastFlowerScore = 0;
+    missFlashTimer = 0;
+    consecutiveMisses = 0;
+    screenShake = 0;
     delay(100);
     musicManager = new MusicManager();
     player.score = 0;
@@ -181,6 +193,7 @@ class GameManager {
 
   void startGame() {
     if (musicManager == null) musicManager = new MusicManager();
+    musicManager.setVolume(settingsManager.volume);
     notes.clear();
     birds.clear();
     flowers.clear();
@@ -190,23 +203,4 @@ class GameManager {
     lastFlowerScore = 0;
   }
 
-  // Optional: behalte diese Methode, falls du später Space/Timing-Hits nutzen willst
-  void playerHit() {
-    if (notes.size() == 0) return;
-    int bestIdx = -1;
-    float bestY = -1;
-    float thresholdY = height - 120;
-    for (int i = 0; i < notes.size(); i++) {
-      Note n = notes.get(i);
-      if (n.y >= thresholdY && n.y > bestY) {
-        bestY = n.y;
-        bestIdx = i;
-      }
-    }
-    if (bestIdx >= 0) {
-      player.score++;
-      notes.remove(bestIdx);
-      spawnNoteAt(random(width), -50);
-    }
-  }
 }

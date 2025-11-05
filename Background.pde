@@ -1,191 +1,156 @@
 class Background {
-  color skyColor;      // Farbe für den Himmel
-  color grassColor;    // Farbe für die Wiese
-  float horizonHeight; // Höhe des Horizonts
-  WeatherManager weather; // Reale Wetterdaten (Open-Meteo)
+  // Konstanten
+  static final float HORIZON_RATIO = 0.7;
+  static final int NUM_CLOUDS = 5;
+  static final int NUM_TREES = 5;
   
-  // Debug-UI: Wetter manuell umstellen
+  color skyColor, grassColor;
+  float horizonHeight;
+  WeatherManager weather;
   boolean showWeatherDebug = false;
-  boolean manualWeather = false; // true = manuell gesetztes Wetter aktiv
-  Button btnLive, btnSunny, btnCloudy, btnRain, btnSnow, btnFog, btnStorm;
+  boolean manualWeather = false;
+  Button[] weatherButtons;
+  String[] buttonLabels = {"Live", "Sunny", "Cloudy", "Rain", "Snow", "Fog", "Storm"};
   
   Background() {
-    skyColor = color(135, 206, 235);    // Hellblau für den Himmel
-    grassColor = color(34, 139, 34);    // Sattes Grün für die Wiese
-    horizonHeight = height * 0.7;        // Horizont bei 70% der Bildschirmhöhe
+    skyColor = color(135, 206, 235);
+    grassColor = color(34, 139, 34);
+    horizonHeight = height * HORIZON_RATIO;
     weather = new WeatherManager();
-
-    // Debug Buttons anlegen (oben links)
-    float bx = 10;
-    float by = 10;
-    float bw = 120;
-    float bh = 32;
-    float gap = 8;
-    btnLive   = new Button(bx, by + 0*(bh+gap), bw, bh, "Live");
-    btnSunny  = new Button(bx, by + 1*(bh+gap), bw, bh, "Sunny");
-    btnCloudy = new Button(bx, by + 2*(bh+gap), bw, bh, "Cloudy");
-    btnRain   = new Button(bx, by + 3*(bh+gap), bw, bh, "Rain");
-    btnSnow   = new Button(bx, by + 4*(bh+gap), bw, bh, "Snow");
-    btnFog    = new Button(bx, by + 5*(bh+gap), bw, bh, "Fog");
-    btnStorm  = new Button(bx, by + 6*(bh+gap), bw, bh, "Storm");
+    initButtons();
+  }
+  
+  void initButtons() {
+    weatherButtons = new Button[7];
+    float bx = 10, by = 10, bw = 120, bh = 32, gap = 8;
+    for (int i = 0; i < weatherButtons.length; i++) {
+      weatherButtons[i] = new Button(bx, by + i*(bh+gap), bw, bh, buttonLabels[i]);
+    }
   }
   
   void display() {
-    // Keine periodischen Wetter-Updates mehr (nur beim Start geholt)
-
-    // Himmelsfarbe ggf. durch Wetter abtönen/aufhellen
-    color effectiveSky = skyColor;
-    if (weather != null) {
-      // mehr Wolken -> kühler/dunklerer Himmel
-      color overcast = color(120, 140, 155);
-      effectiveSky = lerpColor(effectiveSky, overcast, constrain(weather.cloudCover, 0, 1));
-
-      // Regen/Schnee/Thunder justieren
-      if (weather.condition.equals("rain") || weather.condition.equals("drizzle")) {
-        effectiveSky = lerpColor(effectiveSky, color(100, 115, 130), 0.25);
-      } else if (weather.condition.equals("snow")) {
-        effectiveSky = lerpColor(effectiveSky, color(200, 210, 220), 0.30);
-      } else if (weather.condition.equals("thunderstorm")) {
-        effectiveSky = lerpColor(effectiveSky, color(80, 90, 110), 0.35);
-      }
-    }
-
-    // Himmel zeichnen (Farbverlauf von oben nach unten)
-    for (int y = 0; y < horizonHeight; y++) {
-      float inter = map(y, 0, horizonHeight, 0, 1);
-      color lineColor = lerpColor(effectiveSky, color(200), inter);
-      stroke(lineColor);
-      line(0, y, width, y);
-    }
-    
-    // Wiese zeichnen
-    noStroke();
-    fill(grassColor);
-    rect(0, horizonHeight, width, height - horizonHeight);
-    
-  // Bäume im stilisierten, freundlichen Look (vor dem Hund, hinter den Wolken)
-  drawTrees();
-
-    // Stylisierte Musiker-Hund-Figur (original, keine markenrechtlich geschützte Kopie)
+    drawSky();
+    drawGrass();
+    drawTrees();
     drawMusicianDog();
-
-    // Wettereffekte (Regen/Schnee/Nebel)
     drawWeatherOverlay();
-
-    // Optional: Ein paar dekorative Wolken
     drawClouds();
-
-    // Debug-Buttons zuletzt zeichnen (UI oben drauf)
     drawWeatherDebugControls();
   }
   
-  // Mehrere Bäume platzieren (einfache Parallaxe/Sway)
-  void drawTrees() {
-    // Feste Positionen, abhängig von der Fensterbreite
-    float[] xs = { width*0.10, width*0.26, width*0.42, width*0.60, width*0.78 };
-    float[] sc = { 0.95, 1.15, 1.0, 1.2, 1.05 };
-    // Leichte Tiefenfärbung: weiter hinten = dunkler
-    color[] leaf = {
-      color(76, 160, 70),
-      color(84, 175, 78),
-      color(90, 180, 85),
-      color(84, 175, 78),
-      color(76, 160, 70)
-    };
-    color trunkCol = color(130, 90, 55);
-    for (int i = 0; i < xs.length; i++) {
-      drawTree(xs[i], horizonHeight, sc[i], leaf[i], trunkCol);
+  void drawSky() {
+    color effectiveSky = calculateEffectiveSkyColor();
+    for (int y = 0; y < horizonHeight; y++) {
+      float inter = map(y, 0, horizonHeight, 0, 1);
+      stroke(lerpColor(effectiveSky, color(200), inter));
+      line(0, y, width, y);
     }
   }
-
-  // Einzelnen Baum zeichnen
+  
+  color calculateEffectiveSkyColor() {
+    if (weather == null) return skyColor;
+    
+    color result = lerpColor(skyColor, color(120, 140, 155), constrain(weather.cloudCover, 0, 1));
+    
+    switch(weather.condition) {
+      case "rain":
+      case "drizzle":
+        return lerpColor(result, color(100, 115, 130), 0.25);
+      case "snow":
+        return lerpColor(result, color(200, 210, 220), 0.30);
+      case "thunderstorm":
+        return lerpColor(result, color(80, 90, 110), 0.35);
+      default:
+        return result;
+    }
+  }
+  
+  void drawGrass() {
+    noStroke();
+    fill(grassColor);
+    rect(0, horizonHeight, width, height - horizonHeight);
+  }
+  
+  void drawTrees() {
+    float[] positions = {0.10, 0.26, 0.42, 0.60, 0.78};
+    float[] scales = {0.95, 1.15, 1.0, 1.2, 1.05};
+    color[] leaves = {
+      color(76, 160, 70), color(84, 175, 78), color(90, 180, 85),
+      color(84, 175, 78), color(76, 160, 70)
+    };
+    
+    for (int i = 0; i < NUM_TREES; i++) {
+      drawTree(width * positions[i], horizonHeight, scales[i], leaves[i], color(130, 90, 55));
+    }
+  }
+  
   void drawTree(float x, float groundY, float s, color leafBase, color trunkCol) {
     pushMatrix();
     pushStyle();
     translate(x, groundY);
     scale(s);
-
-    // Wind-Sway für Blätterkrone
-    float phase = x * 0.01;
-    float sway = sin(frameCount * 0.02 + phase) * 2.0;
-
-    // Schatten auf dem Boden
+    
+    float sway = sin(frameCount * 0.02 + x * 0.01) * 2.0;
+    
+    // Schatten
     noStroke();
     fill(0, 60);
     ellipse(0, 6, 60, 10);
-
+    
     // Stamm
     fill(trunkCol);
     stroke(0, 40);
     strokeWeight(1);
-    float trunkH = 70;
-    float trunkW = 18;
-    rect(-trunkW/2, -trunkH, trunkW, trunkH, 4);
-    // Rindenstreifen
+    rect(-9, -70, 18, 70, 4);
+    
+    // Rinde-Textur
     stroke(110, 75, 45, 120);
-    for (int i = -6; i <= 6; i += 3) {
-      line(i, -trunkH + 8, i, -8);
-    }
-
-    // Blätter-Krone: mehrere weiche, überlappende Ellipsen
+    for (int i = -6; i <= 6; i += 3) line(i, -62, i, -8);
+    
+    // Blätter - 3 Ebenen
     noStroke();
-    color leafDark = lerpColor(leafBase, color(30, 90, 40), 0.35);
-    color leafLight = lerpColor(leafBase, color(210, 255, 210), 0.25);
-
-    // Untere breite Lage
-    fill(leafDark);
-    ellipse(-20 + sway*0.4, -trunkH - 10, 70, 45);
-    ellipse( 20 + sway*0.4, -trunkH - 10, 70, 45);
-    ellipse(  0 + sway*0.4, -trunkH -  2, 80, 50);
-
-    // Mittlere Lage
-    fill(leafBase);
-    ellipse(-15 + sway*0.6, -trunkH - 28, 60, 40);
-    ellipse( 15 + sway*0.6, -trunkH - 28, 60, 40);
-    ellipse(  0 + sway*0.6, -trunkH - 22, 70, 44);
-
-    // Obere Lichtkante
-    fill(leafLight);
-    ellipse(  0 + sway*0.8, -trunkH - 40, 56, 34);
-
+    color[] leafColors = {
+      lerpColor(leafBase, color(30, 90, 40), 0.35),
+      leafBase,
+      lerpColor(leafBase, color(210, 255, 210), 0.25)
+    };
+    
+    fill(leafColors[0]);
+    ellipse(-20 + sway*0.4, -80, 70, 45);
+    ellipse(20 + sway*0.4, -80, 70, 45);
+    ellipse(sway*0.4, -72, 80, 50);
+    
+    fill(leafColors[1]);
+    ellipse(-15 + sway*0.6, -98, 60, 40);
+    ellipse(15 + sway*0.6, -98, 60, 40);
+    ellipse(sway*0.6, -92, 70, 44);
+    
+    fill(leafColors[2]);
+    ellipse(sway*0.8, -110, 56, 34);
+    
     popStyle();
     popMatrix();
   }
-
+  
   void drawClouds() {
-    fill(255, 255, 255, 180);
+    fill(255, 180);
     noStroke();
-    
-    // Mehrere Wolken an verschiedenen Positionen
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < NUM_CLOUDS; i++) {
       float cloudX = (width * i / 4 + frameCount * 0.2) % (width + 200) - 100;
       float cloudY = height * 0.2 + sin(frameCount * 0.02 + i) * 20;
-      
-      // Eine Wolke aus mehreren überlappenden Kreisen
       ellipse(cloudX, cloudY, 80, 50);
       ellipse(cloudX - 30, cloudY + 10, 60, 40);
       ellipse(cloudX + 30, cloudY + 10, 60, 40);
     }
   }
   
-  // Tageszeit-basierte Himmelsfarbe
   void updateSkyColor() {
     int h = hour();
-    if (h >= 6 && h < 10) {
-      // Sonnenaufgang: Orange-Blau
-      skyColor = color(135, 206, 235);
-    } else if (h >= 10 && h < 17) {
-      // Tag: Hellblau
-      skyColor = color(135, 206, 235);
-    } else if (h >= 17 && h < 20) {
-      // Sonnenuntergang: Orange-Rot
-      skyColor = color(255, 140, 0);
-    } else {
-      // Nacht: Dunkelblau
-      skyColor = color(25, 25, 112);
-    }
+    skyColor = (h >= 6 && h < 17) ? color(135, 206, 235) :
+               (h >= 17 && h < 20) ? color(255, 140, 0) :
+               color(25, 25, 112);
   }
-
+  
   void drawMusicianDog() {
     pushMatrix();
     pushStyle();
@@ -292,120 +257,100 @@ class Background {
     popStyle();
     popMatrix();
   }
-
-  // Wettereffekte überlagern
+  
   void drawWeatherOverlay() {
     if (weather == null) return;
-    if (weather.condition.equals("rain") || weather.condition.equals("drizzle") || weather.condition.equals("thunderstorm")) {
-      drawRainOverlay(weather.condition.equals("thunderstorm"));
-    } else if (weather.condition.equals("snow")) {
-      drawSnowOverlay();
-    } else if (weather.condition.equals("fog")) {
-      drawFogOverlay();
+    
+    switch(weather.condition) {
+      case "rain":
+      case "drizzle":
+        drawRainOverlay(false);
+        break;
+      case "thunderstorm":
+        drawRainOverlay(true);
+        break;
+      case "snow":
+        drawSnowOverlay();
+        break;
+      case "fog":
+        drawFogOverlay();
+        break;
     }
   }
-
+  
   void drawRainOverlay(boolean storm) {
     stroke(200, 210, 255, 150);
     strokeWeight(2);
-    float density = storm ? 240 : 140;
-    for (int i = 0; i < density; i++) {
-      float rx = random(width);
-      float ry = random(horizonHeight, height);
+    int drops = storm ? 240 : 140;
+    for (int i = 0; i < drops; i++) {
+      float rx = random(width), ry = random(horizonHeight, height);
       line(rx, ry, rx+6, ry+12);
     }
     if (storm && frameCount % 120 < 4) {
-      // gelegentlicher Blitz-Effekt
       noStroke();
-      fill(255, 255, 255, 60);
+      fill(255, 60);
       rect(0, 0, width, horizonHeight);
     }
   }
-
+  
   void drawSnowOverlay() {
     noStroke();
-    fill(255, 255, 255, 200);
+    fill(255, 200);
     for (int i = 0; i < 120; i++) {
       float sx = random(width);
-      float sy = random(horizonHeight-40, height);
-      ellipse(sx, sy + 3*sin(frameCount*0.05 + sx*0.02), 3, 3);
+      float sy = random(horizonHeight-40, height) + 3*sin(frameCount*0.05 + sx*0.02);
+      ellipse(sx, sy, 3, 3);
     }
   }
-
+  
   void drawFogOverlay() {
     noStroke();
+    fill(230, 235, 240, 40);
     for (int i = 0; i < 4; i++) {
-      fill(230, 235, 240, 40);
       rect(0, horizonHeight - 80 + i*30, width, 40);
     }
   }
-
-  // --- Debug Wettersteuerung ---
+  
   void drawWeatherDebugControls() {
     if (!showWeatherDebug) return;
-    // Hintergrundpanel
+    
     pushStyle();
     noStroke();
-    fill(0, 0, 0, 80);
-    rect(6, 6, 128, 7*(32+8)+8);
-
-    // Buttons rendern
-    btnLive.display();
-    btnSunny.display();
-    btnCloudy.display();
-    btnRain.display();
-    btnSnow.display();
-    btnFog.display();
-    btnStorm.display();
-
-    // Statusanzeige
+    fill(0, 80);
+    rect(6, 6, 128, weatherButtons.length*(32+8)+8);
+    
+    for (Button btn : weatherButtons) btn.display();
+    
     fill(255);
     textSize(12);
     textAlign(LEFT, TOP);
-  String mode = manualWeather ? "Manual" : "Live";
-    String cond = (weather != null) ? weather.condition : "-";
-    float temp = (weather != null) ? weather.temperature : 0;
-    text(mode + ": " + cond + "  " + nf(temp,0,1) + "°C", 10, 6 + 7*(32+8) + 10);
+    String info = (manualWeather ? "Manual" : "Live") + ": " + 
+                  (weather != null ? weather.condition : "-") + "  " + 
+                  (weather != null ? nf(weather.temperature,0,1) : "0") + "°C";
+    text(info, 10, 6 + weatherButtons.length*(32+8) + 10);
     popStyle();
   }
-
-  // Gibt true zurück, wenn ein Debug-Button geklickt wurde (Event verbraucht)
+  
   boolean mousePressed() {
     if (!showWeatherDebug) return false;
-    // hover/pressed Zustand erneuern (optional)
-    // Die Button.display nutzt mousePressed bereits visuell.
-    if (btnLive.isClicked(mouseX, mouseY)) {
-      manualWeather = false; // zurück zu Live
-      if (weather != null) weather.updateWeather(); // API-Daten neu abrufen
-      return true;
-    }
-    if (btnSunny.isClicked(mouseX, mouseY)) {
-      setManualWeather("sunny", 0.1);
-      return true;
-    }
-    if (btnCloudy.isClicked(mouseX, mouseY)) {
-      setManualWeather("partly_cloudy", 0.7);
-      return true;
-    }
-    if (btnRain.isClicked(mouseX, mouseY)) {
-      setManualWeather("rain", 0.9);
-      return true;
-    }
-    if (btnSnow.isClicked(mouseX, mouseY)) {
-      setManualWeather("snow", 0.7);
-      return true;
-    }
-    if (btnFog.isClicked(mouseX, mouseY)) {
-      setManualWeather("fog", 0.7);
-      return true;
-    }
-    if (btnStorm.isClicked(mouseX, mouseY)) {
-      setManualWeather("thunderstorm", 0.95);
-      return true;
+    
+    String[] conditions = {"", "sunny", "partly_cloudy", "rain", "snow", "fog", "thunderstorm"};
+    float[] cloudValues = {0, 0.1, 0.7, 0.9, 0.7, 0.7, 0.95};
+    
+    for (int i = 0; i < weatherButtons.length; i++) {
+      if (weatherButtons[i].isClicked(mouseX, mouseY)) {
+        if (i == 0) {
+          manualWeather = false;
+          if (weather != null) weather.updateWeather();
+        } else {
+          setManualWeather(conditions[i], cloudValues[i]);
+        }
+        return true;
+      }
     }
     return false;
   }
-
+  
   void setManualWeather(String cond, float clouds) {
     if (weather == null) return;
     manualWeather = true;
