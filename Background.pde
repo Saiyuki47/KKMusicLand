@@ -246,7 +246,7 @@ class Background {
     rect(52, -23, 62, 10, 3);
     // Kopfplatte
     rect(114, -25, 14, 14, 2);
-    // Saiten
+    // Seiten
     stroke(230);
     strokeWeight(1);
     for (int i = -2; i <= 2; i++) {

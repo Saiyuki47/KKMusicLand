@@ -3,6 +3,7 @@ class GameManager {
   ArrayList<Note> notes = new ArrayList<Note>();
   ArrayList<Bird> birds = new ArrayList<Bird>();
   ArrayList<Flower> flowers = new ArrayList<Flower>();
+  ArrayList<Grave> graves = new ArrayList<Grave>();
   boolean gameOver = false;
   Button retryBtn = new Button(width/2 - 210, height/2 + 50, 200, 50, "Retry");
   Button menuBtn = new Button(width/2 + 10, height/2 + 50, 200, 50, "Main Menu");
@@ -38,8 +39,9 @@ class GameManager {
       translate(random(-screenShake, screenShake), random(-screenShake, screenShake));
     }
     
-    //display every flower, bird, note
+  //display every flower, grave, bird, note
     for (Flower f : flowers) f.display();
+  for (Grave g : graves) g.display();
     for (Bird b : birds) b.display();
     for (Note n : notes) n.display();
     player.display();
@@ -65,6 +67,7 @@ class GameManager {
       return;
     }
     checkNoteHits();
+    checkBirdHits();
   }
 
   void spawnNoteAt(float x, float y) {
@@ -150,8 +153,15 @@ class GameManager {
     for (int i = birds.size() - 1; i >= 0; i--) {
       Bird b = birds.get(i);
       b.update();
-      if (b.isOffScreen()) birds.remove(i);
+      // Entferne Vogel wenn außerhalb oder Blutung beendet, und setze Grab
+      if (b.isOffScreen()) {
+        birds.remove(i);
+      } else if (b.isDone()) {
+        graves.add(new Grave(b.x, b.y));
+        birds.remove(i);
+      }
     }
+    for (Grave g : graves) g.update();
     for (Flower f : flowers) f.update();
   }
 
@@ -166,11 +176,23 @@ class GameManager {
     }
   }
 
+  void checkBirdHits() {
+    for (int i = birds.size() - 1; i >= 0; i--) {
+      Bird b = birds.get(i);
+      if (b.isClicked(mouseX, mouseY)) {
+        b.explode();
+        // Punkte für Klick auf Vogel (optional leicht höher)
+        player.score += 2;
+      }
+    }
+  }
+
   void restart() {
     if (musicManager != null) musicManager.stopMusic();
     notes.clear();
     birds.clear();
     flowers.clear();
+    graves.clear();
     gameOver = false;
     lastBirdScore = 0;
     lastFlowerScore = 0;
@@ -188,15 +210,34 @@ class GameManager {
     notes.clear();
     birds.clear();
     flowers.clear();
+    graves.clear();
     player.score = 0;
     gameOver = false;
     lastBirdScore = 0;
     lastFlowerScore = 0;
     menu.isInMenu = true;
+    // Spiele wieder die Menü-Musik
+    if (menu != null) {
+      try {
+        if (menu.menuMusic != null) {
+          menu.menuMusic.stopMusic();
+          menu.menuMusic = null;
+        }
+        menu.menuMusic = new MusicManager("gamemusic/Grand-Opening-PM-Music.wav");
+        menu.menuMusic.setVolume(settingsManager.volume);
+      } catch (Exception e) {
+        println("Fehler beim Starten der Menü-Musik: " + e.getMessage());
+      }
+    }
     loop();
   }
 
   void startGame() {
+    // Stelle sicher, dass die Menü-Musik gestoppt ist
+    if (menu != null && menu.menuMusic != null) {
+      menu.menuMusic.stopMusic();
+      menu.menuMusic = null;
+    }
     if (musicManager == null) musicManager = new MusicManager();
     musicManager.setVolume(settingsManager.volume);
     notes.clear();

@@ -45,6 +45,11 @@ void mousePressed() {
 }
 void keyPressed() {
   if (menu.isInMenu && (key == ENTER || key == RETURN)) {
+    // Stoppe Menü-Musik bei Start per Enter
+    if (menu != null && menu.menuMusic != null) {
+      menu.menuMusic.stopMusic();
+      menu.menuMusic = null;
+    }
     menu.isInMenu = false;
     game.startGame();
     return;
