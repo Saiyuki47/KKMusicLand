@@ -76,8 +76,16 @@ class BirdDodgeGame {
     float y = random(50, height - 50);
     // Verwende den neuen Konstruktor mit aktueller Mausposition als Ziel
     Bird b = new Bird(y, mouseX, mouseY);
-    // 20% Chance auf schnellen Vogel (doppelte Geschwindigkeit)
-    if (random(1) < 0.2) {
+    // Zufallswurf für Geschwindigkeits-Varianten
+    float r = random(1);
+    if (r < 0.1 || settingsManager.debugMode) {
+      // 1% Chance: Ultra-Vogel mit 5-facher Geschwindigkeit
+      b.speedX *= 5.0;
+      b.speedY *= 5.0;
+      // Deutlicher visueller Hinweis (z.B. grelles Magenta/Rot)
+      b.c = color(255, 30, 180);
+    } else if (r < 0.21) {
+      // 20% Chance: schneller Vogel (doppelte Geschwindigkeit)
       b.speedX *= 2.0;
       b.speedY *= 2.0;
       // Visueller Hinweis: wärmere Farbe
