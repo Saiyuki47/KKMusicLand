@@ -201,7 +201,7 @@ class BirdDodgeGame {
           menu.menuMusic.stopMusic();
           menu.menuMusic = null;
         }
-        menu.menuMusic = new MusicManager("gamemusic/Grand-Opening-PM-Music.wav");
+        menu.menuMusic = new MusicManager();
         menu.menuMusic.setVolume(settingsManager.volume);
       } catch (Exception e) {
         println("Fehler beim Starten der Menü-Musik: " + e.getMessage());

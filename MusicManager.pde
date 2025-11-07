@@ -11,18 +11,15 @@ class MusicManager {
   // Standard-Konstruktor wählt zufällige Spielmusik aus dem gamemusic-Ordner
   // Unterstützte Formate: wav, aiff, aif, mp3
   MusicManager() {
+    String filename = null;
     String chosen = settingsManager.selectedTrack;
-    if (chosen != null) {
-      initWithFile(chosen);
+    if (chosen != null) filename = chosen;
+    if (filename == null) filename = pickRandomMusicFile();
+    if (filename == null) {
+      if (settingsManager.debugMode) println("Keine Musikdatei gefunden. Überspringe Musik-Wiedergabe.");
       return;
     }
-    String randomFile = pickRandomMusicFile();
-    if (randomFile == null) {
-      // Fallback falls nichts gefunden
-      randomFile = "gamemusic/Grand-Opening-PM-Music.wav";
-      if (settingsManager.debugMode) println("Kein zufälliges Musikfile gefunden. Fallback genutzt.");
-    }
-    initWithFile(randomFile);
+    initWithFile(filename);
   }
 
   // Erweiterter Konstruktor erlaubt eigene Musikdatei (z.B. fürs Hauptmenü)
@@ -33,6 +30,15 @@ class MusicManager {
   void initWithFile(String filename) {
     volume = settingsManager.volume;
     try {
+      // Stelle sicher, dass die Datei existiert (relativ zu data/)
+      File f = new File(sketchPath("data/" + filename));
+      if (!f.exists()) {
+        if (settingsManager.debugMode) println("Musikdatei nicht gefunden: " + f.getAbsolutePath());
+        music = null;
+        fft = null;
+        spectrum = null;
+        return;
+      }
       music = new SoundFile(Main.this, filename);
       fft = new FFT(Main.this, FFT_SIZE);
       spectrum = new float[FFT_SIZE];
