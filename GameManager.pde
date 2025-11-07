@@ -5,8 +5,11 @@ class GameManager {
   ArrayList<Flower> flowers = new ArrayList<Flower>();
   ArrayList<Grave> graves = new ArrayList<Grave>();
   boolean gameOver = false;
+  boolean paused = false;
   Button retryBtn = new Button(width/2 - 210, height/2 + 50, 200, 50, "Retry");
   Button menuBtn = new Button(width/2 + 10, height/2 + 50, 200, 50, "Main Menu");
+  Button resumeBtn = new Button(width/2 - 100, height/2 - 20, 200, 50, "Resume");
+  Button pauseMenuBtn = new Button(width/2 - 100, height/2 + 50, 200, 50, "Main Menu");
   MusicManager musicManager;
   Player player = new Player();
   int lastBirdScore = 0;
@@ -20,7 +23,7 @@ class GameManager {
   GameManager() {}
 
   void update() {
-    if (gameOver) return;
+    if (gameOver || paused) return;
     if (musicManager != null) musicManager.setVolume(settingsManager.volume);
     if (musicManager != null && musicManager.detectBeat()) spawnNoteAt(random(width), -50);
     updateNotes();
@@ -57,10 +60,16 @@ class GameManager {
       rect(0, 0, width, height);
     }
     
+    if (paused) drawPauseUI();
     if (gameOver) drawGameOverUI();
   }
 
   void mousePressed() {
+    if (paused) {
+      if (resumeBtn.isClicked(mouseX, mouseY)) togglePause();
+      else if (pauseMenuBtn.isClicked(mouseX, mouseY)) returnToMenu();
+      return;
+    }
     if (gameOver) {
       if (retryBtn.isClicked(mouseX, mouseY)) restart();
       else if (menuBtn.isClicked(mouseX, mouseY)) returnToMenu();
@@ -244,9 +253,38 @@ class GameManager {
     birds.clear();
     flowers.clear();
     gameOver = false;
+    paused = false;
     player.score = 0;
     lastBirdScore = 0;
     lastFlowerScore = 0;
+  }
+  
+  void togglePause() {
+    paused = !paused;
+    if (musicManager != null) {
+      if (paused) {
+        musicManager.music.pause();
+      } else {
+        musicManager.music.play();
+      }
+    }
+  }
+  
+  void drawPauseUI() {
+    // Halbtransparenter Overlay
+    noStroke();
+    fill(0, 0, 0, 180);
+    rect(0, 0, width, height);
+    
+    // Pause Text
+    textAlign(CENTER, CENTER);
+    textSize(72);
+    fill(255);
+    text("PAUSED", width/2, height/2 - 100);
+    
+    // Buttons
+    resumeBtn.display();
+    pauseMenuBtn.display();
   }
 
 }

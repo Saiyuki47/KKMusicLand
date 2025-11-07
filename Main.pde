@@ -26,7 +26,7 @@ void draw() {
     game.display();
   }
   // Cursor abhängig vom Zustand zeigen/verstecken
-  if (settingsView.visible || menu.isInMenu || game.gameOver) {
+  if (settingsView.visible || menu.isInMenu || game.gameOver || game.paused) {
     cursor();
   } else {
     noCursor();
@@ -58,6 +58,11 @@ void keyPressed() {
     }
     menu.isInMenu = false;
     game.startGame();
+    return;
+  }
+  if (!menu.isInMenu && !game.gameOver && (key == 'p' || key == 'P' || key == ESC)) {
+    key = 0; // Verhindert ESC-Standard-Verhalten
+    game.togglePause();
     return;
   }
   if (!menu.isInMenu && (key == 'r' || key == 'R')) {

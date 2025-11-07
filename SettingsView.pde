@@ -111,11 +111,11 @@ class SettingsView {
   
     // Schwierigkeits-Buttons zeichnen
     pushStyle();
-    if (settingsManager.difficulty == 0) btnEasy.label = "● Leicht";
+    if (settingsManager.difficulty == 0) btnEasy.label = "X Leicht";
     else btnEasy.label = "Leicht";
-    if (settingsManager.difficulty == 1) btnMedium.label = "● Mittel";
+    if (settingsManager.difficulty == 1) btnMedium.label = "X Mittel";
     else btnMedium.label = "Mittel";
-    if (settingsManager.difficulty == 2) btnHard.label = "● Schwer";
+    if (settingsManager.difficulty == 2) btnHard.label = "X Schwer";
     else btnHard.label = "Schwer";
     btnEasy.display();
     btnMedium.display();
