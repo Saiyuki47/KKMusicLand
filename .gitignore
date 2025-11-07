@@ -7,3 +7,5 @@ application.windows64
 application.macosx
 .autosave
 *autosave
+settings.txt
+data/gamemusic/

@@ -6,7 +6,7 @@ class Note {
   Note(float x, float y) {
     this.x = x;
     this.y = y;
-    this.speed = random(1.5, 2.5);
+    this.speed = settingsManager.getNoteSpeed();
     this.c = color(random(100,255), random(100,255), random(100,255));
     this.noteType = int(random(4));
   }
