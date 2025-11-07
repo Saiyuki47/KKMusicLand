@@ -238,7 +238,7 @@ class GameManager {
       menu.menuMusic.stopMusic();
       menu.menuMusic = null;
     }
-    if (musicManager == null) musicManager = new MusicManager();
+  if (musicManager == null) musicManager = new MusicManager();
     musicManager.setVolume(settingsManager.volume);
     notes.clear();
     birds.clear();

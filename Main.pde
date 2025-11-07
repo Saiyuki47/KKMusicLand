@@ -25,6 +25,12 @@ void draw() {
     game.update();
     game.display();
   }
+  // Cursor abhängig vom Zustand zeigen/verstecken
+  if (settingsView.visible || menu.isInMenu) {
+    cursor();
+  } else {
+    noCursor();
+  }
 }
 void mousePressed() {
   if (settingsView.visible) {
@@ -58,4 +64,10 @@ void keyPressed() {
     game.restart();
     return;
   }
+  // (kein Crosshair-Toggle nötig; Crosshair wird im Player gezeichnet)
+}
+// Mausrad weiterleiten an SettingsView für Scroll der Trackliste
+void mouseWheel(processing.event.MouseEvent event) {
+  float e = event.getCount();
+  settingsView.onMouseWheel(e);
 }

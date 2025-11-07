@@ -11,6 +11,11 @@ class MusicManager {
   // Standard-Konstruktor wählt zufällige Spielmusik aus dem gamemusic-Ordner
   // Unterstützte Formate: wav, aiff, aif, mp3
   MusicManager() {
+    String chosen = settingsManager.selectedTrack;
+    if (chosen != null) {
+      initWithFile(chosen);
+      return;
+    }
     String randomFile = pickRandomMusicFile();
     if (randomFile == null) {
       // Fallback falls nichts gefunden
