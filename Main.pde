@@ -26,7 +26,7 @@ void draw() {
     game.display();
   }
   // Cursor abhängig vom Zustand zeigen/verstecken
-  if (settingsView.visible || menu.isInMenu) {
+  if (settingsView.visible || menu.isInMenu || game.gameOver) {
     cursor();
   } else {
     noCursor();
