@@ -50,6 +50,32 @@ void mousePressed() {
   }
 }
 void keyPressed() {
+  // Debug output
+  println("Key pressed: " + key + " (code: " + keyCode + ")");
+  println("Game Over: " + game.gameOver + ", Entering Name: " + game.enteringName);
+  
+  // Name eingeben bei Game Over
+  if (game.gameOver && game.enteringName) {
+    println("In name entry mode!");
+    if (key == ENTER || key == RETURN) {
+      println("Submit pressed");
+      game.submitHighscore();
+    } else if (key == BACKSPACE) {
+      println("Backspace pressed");
+      if (game.playerName.length() > 0) {
+        game.playerName = game.playerName.substring(0, game.playerName.length() - 1);
+      }
+    } else if (key >= 32 && key <= 126 && game.playerName.length() < 20) {
+      // Normale Zeichen (Buchstaben, Zahlen, Sonderzeichen)
+      println("Adding char: " + key);
+      game.playerName += key;
+      println("Player name is now: " + game.playerName);
+    } else {
+      println("Key not accepted. key value: " + ((int)key));
+    }
+    return;
+  }
+  
   if (menu.isInMenu && (key == ENTER || key == RETURN)) {
     // Stoppe Menü-Musik bei Start per Enter
     if (menu != null && menu.menuMusic != null) {

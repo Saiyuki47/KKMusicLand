@@ -8,4 +8,5 @@ application.macosx
 .autosave
 *autosave
 settings.txt
+highscores.txt
 data/gamemusic/

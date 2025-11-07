@@ -6,10 +6,13 @@ class GameManager {
   ArrayList<Grave> graves = new ArrayList<Grave>();
   boolean gameOver = false;
   boolean paused = false;
-  Button retryBtn = new Button(width/2 - 210, height/2 + 50, 200, 50, "Retry");
-  Button menuBtn = new Button(width/2 + 10, height/2 + 50, 200, 50, "Main Menu");
+  boolean enteringName = false;
+  String playerName = "";
+  Button retryBtn = new Button(width/2 - 210, height/2 + 150, 200, 50, "Retry");
+  Button menuBtn = new Button(width/2 + 10, height/2 + 150, 200, 50, "Main Menu");
   Button resumeBtn = new Button(width/2 - 100, height/2 - 20, 200, 50, "Resume");
   Button pauseMenuBtn = new Button(width/2 - 100, height/2 + 50, 200, 50, "Main Menu");
+  Button submitNameBtn = new Button(width/2 - 100, height/2 + 140, 200, 50, "Submit");
   MusicManager musicManager;
   Player player = new Player();
   int lastBirdScore = 0;
@@ -71,8 +74,14 @@ class GameManager {
       return;
     }
     if (gameOver) {
-      if (retryBtn.isClicked(mouseX, mouseY)) restart();
-      else if (menuBtn.isClicked(mouseX, mouseY)) returnToMenu();
+      if (enteringName) {
+        if (submitNameBtn.isClicked(mouseX, mouseY)) {
+          submitHighscore();
+        }
+      } else {
+        if (retryBtn.isClicked(mouseX, mouseY)) restart();
+        else if (menuBtn.isClicked(mouseX, mouseY)) returnToMenu();
+      }
       return;
     }
     checkNoteHits();
@@ -126,9 +135,8 @@ class GameManager {
   }
 
   void gameOver() {
-    gameOver = true;
     if (musicManager != null) musicManager.stopMusic();
-    noLoop();
+    triggerGameOver();
   }
 
   void drawHUD() {
@@ -138,12 +146,62 @@ class GameManager {
   }
 
   void drawGameOverUI() {
-    textAlign(CENTER);
-    textSize(40);
-    fill(255, 0, 0);
-    text("Game Over!", width/2, height/2);
-    retryBtn.display();
-    menuBtn.display();
+    if (enteringName) {
+      // Halbtransparenter Hintergrund
+      noStroke();
+      fill(0, 0, 0, 200);
+      rect(0, 0, width, height);
+      
+      // Name eingeben mit mehr Abstand
+      textAlign(CENTER);
+      textSize(56);
+      fill(255, 200, 0);
+      text("New Highscore!", width/2, height/2 - 140);
+      
+      textSize(36);
+      fill(255);
+      text("Your Score: " + player.score, width/2, height/2 - 80);
+      
+      textSize(28);
+      text("Enter your name:", width/2, height/2 - 20);
+      
+      // Name Eingabefeld - heller Hintergrund, größer und tiefer
+      noStroke();
+      fill(255, 255, 255);
+      rect(width/2 - 180, height/2 + 20, 360, 60, 5);
+      
+      // Rahmen um das Feld
+      noFill();
+      stroke(100, 150, 255);
+      strokeWeight(3);
+      rect(width/2 - 180, height/2 + 20, 360, 60, 5);
+      
+      // Name Text - schwarz statt rot
+      noStroke();
+      fill(0);
+      textSize(32);
+      textAlign(CENTER, CENTER);
+      String displayText = playerName;
+      if (displayText.length() == 0) displayText = ""; 
+      // Zeichne direkt in der Mitte des weißen Rechtecks
+      text(displayText + "_", width/2, height/2 + 50);
+      
+      textAlign(CENTER);
+      submitNameBtn.display();
+    } else {
+      // Normaler Game Over Screen
+      textAlign(CENTER);
+      textSize(40);
+      fill(255, 0, 0);
+      text("Game Over!", width/2, height/2 - 50);
+      
+      textSize(32);
+      fill(255);
+      text("Score: " + player.score, width/2, height/2 + 10);
+      
+      retryBtn.display();
+      menuBtn.display();
+    }
   }
 
   void checkNoteHits() {
@@ -286,5 +344,91 @@ class GameManager {
     resumeBtn.display();
     pauseMenuBtn.display();
   }
+  
+  void triggerGameOver() {
+    gameOver = true;
+    // Prüfe ob es ein Highscore ist
+    if (isHighscore(player.score)) {
+      enteringName = true;
+      playerName = "";
+      loop(); // Draw loop weiterlaufen lassen für Name-Eingabe
+    } else {
+      enteringName = false;
+      noLoop();
+    }
+  }
+  
+  boolean isHighscore(int score) {
+    ArrayList<HighscoreEntry> scores = loadHighscores();
+    if (scores.size() < 10) return true; // Top 10, weniger als 10 Einträge
+    // Prüfe ob Score höher ist als der niedrigste
+    for (HighscoreEntry entry : scores) {
+      if (score > entry.score) return true;
+    }
+    return false;
+  }
+  
+  void submitHighscore() {
+    if (playerName.trim().length() == 0) return; // Leere Namen nicht erlaubt
+    
+    ArrayList<HighscoreEntry> scores = loadHighscores();
+    scores.add(new HighscoreEntry(playerName.trim(), player.score));
+    
+    // Sortiere nach Score absteigend
+    scores.sort((a, b) -> b.score - a.score);
+    
+    // Behalte nur Top 10
+    if (scores.size() > 10) {
+      scores = new ArrayList<HighscoreEntry>(scores.subList(0, 10));
+    }
+    
+    saveHighscores(scores);
+    enteringName = false;
+    
+    // Zurück ins Hauptmenü
+    returnToMenu();
+  }
+  
+  ArrayList<HighscoreEntry> loadHighscores() {
+    ArrayList<HighscoreEntry> scores = new ArrayList<HighscoreEntry>();
+    File file = new File(sketchPath("highscores.txt"));
+    if (!file.exists()) return scores;
+    
+    String[] lines = loadStrings("highscores.txt");
+    if (lines != null) {
+      for (String line : lines) {
+        String[] parts = line.split("\\|");
+        if (parts.length == 2) {
+          try {
+            String name = parts[0];
+            int score = Integer.parseInt(parts[1]);
+            scores.add(new HighscoreEntry(name, score));
+          } catch (Exception e) {
+            println("Fehler beim Laden einer Highscore-Zeile: " + line);
+          }
+        }
+      }
+    }
+    return scores;
+  }
+  
+  void saveHighscores(ArrayList<HighscoreEntry> scores) {
+    String[] lines = new String[scores.size()];
+    for (int i = 0; i < scores.size(); i++) {
+      HighscoreEntry entry = scores.get(i);
+      lines[i] = entry.name + "|" + entry.score;
+    }
+    saveStrings(sketchPath("highscores.txt"), lines);
+  }
 
+}
+
+class HighscoreEntry {
+  String name;
+  int score;
+  
+  HighscoreEntry(String name, int score) {
+    this.name = name;
+    this.score = score;
+  }
 }
