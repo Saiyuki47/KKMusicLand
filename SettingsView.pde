@@ -23,7 +23,7 @@ class SettingsView {
   
   void setup() {
     btnDebug = new Button(width/2-100, height/2-80, 200, 50, "Debug: " + (settingsManager.debugMode ? "On" : "Off"));
-    btnBack = new Button(width/2-100, height/2+100, 200, 50, "Back");
+    btnBack = new Button(width/2-100, height/2+100, 150, 50, "Back");
     
     // ControlP5 Volume Slider - Schöner gestylt
     volumeSlider = cp5.addSlider("volume")
