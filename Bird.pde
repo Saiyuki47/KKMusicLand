@@ -1,6 +1,7 @@
 class Bird {
   float x, y;
   float speed;
+  float speedX, speedY; // Für Bird Dodge Modus
   int c;
   float wingAngle;
   // Klick-/Explosions-Logik
@@ -26,8 +27,28 @@ class Bird {
     this.x = -50;
     this.y = y;
     this.speed = random(3, 6);
+    this.speedX = this.speed; // Initialize speedX
+    this.speedY = 0; // Initialize speedY
     this.wingAngle = 0;
     this.c = color(random(50, 150), random(50, 100), random(20, 80));
+  }
+  
+  // Konstruktor mit Zielposition für Bird Dodge Modus
+  Bird(float y, float targetX, float targetY) {
+    this.x = -50;
+    this.y = y;
+    this.speed = random(3, 6);
+    this.wingAngle = 0;
+    this.c = color(random(50, 150), random(50, 100), random(20, 80));
+    
+    // Berechne Richtung zur Zielposition
+    float dx = targetX - this.x;
+    float dy = targetY - this.y;
+    float angle = atan2(dy, dx);
+    
+    // Setze Geschwindigkeit in Richtung Ziel
+    this.speedX = cos(angle) * this.speed;
+    this.speedY = sin(angle) * this.speed;
   }
   void update() {
     if (exploding) {
@@ -65,8 +86,9 @@ class Bird {
           bleedingComplete = true;
         }
       } else {
-        // normaler Flug
-        x += speed;
+        // normaler Flug - verwende speedX und speedY für Bird Dodge Modus
+        x += speedX;
+        y += speedY;
         wingAngle += 0.2;
       }
     }

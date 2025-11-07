@@ -2,14 +2,22 @@ class MenuManager {
   Button startButton;
   Button exitButton;
   Button settingsButton;
+  Button modeRhythmBtn;
+  Button modeDodgeBtn;
   boolean isInMenu = true;
   MusicManager menuMusic; // eigene Musikinstanz fürs Hauptmenü
 
   MenuManager() {
     float centerX = width/2 - 100;
-    startButton = new Button(centerX, height/2 - 60, 200, 50, "Start Game");
-    settingsButton = new Button(centerX, height/2 + 20, 200, 50, "Settings");
-    exitButton = new Button(centerX, height/2 + 100, 200, 50, "Exit");
+    startButton = new Button(centerX, height/2 + 60, 200, 50, "Start Game");
+    settingsButton = new Button(centerX, height/2 + 140, 200, 50, "Settings");
+    exitButton = new Button(centerX, height/2 + 220, 200, 50, "Exit");
+    
+    // Mode Buttons
+    float modeX = width/2 - 210;
+    float modeY = height/2 - 40;
+    modeRhythmBtn = new Button(modeX, modeY, 200, 50, "Rhythm Mode");
+    modeDodgeBtn = new Button(modeX + 220, modeY, 200, 50, "Bird Dodge");
 
     // Lade Menü-Musik (Datei muss im data/gamemusic Ordner liegen)
     // Falls du eine andere Datei nutzen willst, einfach den Dateinamen austauschen.
@@ -31,6 +39,27 @@ class MenuManager {
     textSize(48);
     fill(0);
     text("KK Music Land", width/2, height/3);
+    
+    // Mode Selection Label
+    textSize(24);
+    text("Game Mode:", width/2, height/2 - 80);
+    
+    // Mode Buttons mit Markierung
+    pushStyle();
+    if (gameModeManager.getMode() == GameMode.RHYTHM) {
+      modeRhythmBtn.label = "● Rhythm Mode";
+    } else {
+      modeRhythmBtn.label = "Rhythm Mode";
+    }
+    if (gameModeManager.getMode() == GameMode.BIRD_DODGE) {
+      modeDodgeBtn.label = "● Bird Dodge";
+    } else {
+      modeDodgeBtn.label = "Bird Dodge";
+    }
+    modeRhythmBtn.display();
+    modeDodgeBtn.display();
+    popStyle();
+    
     startButton.display();
     settingsButton.display();
     exitButton.display();
@@ -38,6 +67,15 @@ class MenuManager {
 
   boolean mousePressed() {
     try {
+      // Mode Selection
+      if (modeRhythmBtn.isClicked(mouseX, mouseY)) {
+        gameModeManager.setMode(GameMode.RHYTHM);
+        return false;
+      } else if (modeDodgeBtn.isClicked(mouseX, mouseY)) {
+        gameModeManager.setMode(GameMode.BIRD_DODGE);
+        return false;
+      }
+      
       if (startButton.isClicked(mouseX, mouseY)) {
         isInMenu = false;
         // Stoppe Menü-Musik bevor Spiel startet
